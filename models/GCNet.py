@@ -65,7 +65,8 @@ class GCBottleneck(nn.Module):
         w = w.unsqueeze(3)
 
         context = torch.matmul(input_x, w)
-        context = context.reshape(N, C, 1, 1)
+        context = context.permute(0, 2, 1, 3)
+        # context = context.reshape(N, C, 1, 1)
         return context
 
     def forward(self, x):
