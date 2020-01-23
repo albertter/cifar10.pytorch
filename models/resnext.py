@@ -84,6 +84,6 @@ def resnext_32_4d():
 
 if __name__ == '__main__':
     model = resnext_32_4d()
-    x = torch.randn(1, 3, 32, 32)
+    x = torch.randn(10, 3, 32, 32)
     y = model(x)
     print(y.shape)
