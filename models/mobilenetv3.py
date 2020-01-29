@@ -72,7 +72,7 @@ class MobileNetV3Large(nn.Module):
         super(MobileNetV3Large, self).__init__()
         self.conv1 = nn.Conv2d(3, 16, kernel_size = 3, stride = 2)
         self.hs = hswish
-        self.bnecks = [
+        self.setting = [
             # kernal_size,exp_size, out_planes, se,nl,stride
             [3, 16, 16, False, 'RE', 1],
             [3, 64, 24, False, 'RE', 2],
