@@ -11,18 +11,18 @@ class Block(nn.Module):
         self.stride = stride
 
         planes = expansion * in_planes
-        self.conv1 = nn.Conv2d(in_planes, planes, kernel_size = 1, stride = 1, padding = 0, bias = False)
+        self.conv1 = nn.Conv2d(in_planes, planes, kernel_size = 1)
         self.bn1 = nn.BatchNorm2d(planes)
         self.conv2 = nn.Conv2d(planes, planes, kernel_size = 3, stride = stride, padding = 1, groups = planes,
                                bias = False)
         self.bn2 = nn.BatchNorm2d(planes)
-        self.conv3 = nn.Conv2d(planes, out_planes, kernel_size = 1, stride = 1, padding = 0, bias = False)
+        self.conv3 = nn.Conv2d(planes, out_planes, kernel_size = 1)
         self.bn3 = nn.BatchNorm2d(out_planes)
 
         self.shortcut = nn.Sequential()
         if stride == 1 and in_planes != out_planes:
             self.shortcut = nn.Sequential(
-                nn.Conv2d(in_planes, out_planes, kernel_size = 1, stride = 1, padding = 0, bias = False),
+                nn.Conv2d(in_planes, out_planes, kernel_size = 1, bias = False),
                 nn.BatchNorm2d(out_planes),
             )
 

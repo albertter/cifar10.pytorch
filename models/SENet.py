@@ -3,6 +3,20 @@ from torch import nn
 import torch.nn.functional as F
 
 
+class SEModule(nn.Module):
+    def __init__(self, in_planes, reduction = 16):
+        super(SEModule, self).__init__()
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.fc1 = nn.Conv2d(in_planes, in_planes // reduction, kernel_size = 1)
+        self.fc2 = nn.Conv2d(in_planes // reduction, in_planes, kernel_size = 1)
+
+    def forward(self, x):
+        w = self.avg_pool(x)
+        w = F.relu(self.fc1(w))
+        w = torch.sigmoid((self.fc2(w)))
+        return x * w
+
+
 class BasicBlock(nn.Module):
     def __init__(self, in_planes, out_planes, reduction = 16, stride = 1):
         super(BasicBlock, self).__init__()
@@ -10,7 +24,7 @@ class BasicBlock(nn.Module):
         self.bn1 = nn.BatchNorm2d(out_planes)
         self.conv2 = nn.Conv2d(out_planes, out_planes, kernel_size = 3, stride = stride, padding = 1, bias = False)
         self.bn2 = nn.BatchNorm2d(out_planes)
-        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.se = SEModule(out_planes)
         if in_planes != out_planes:
             self.match = nn.Sequential(
                 nn.Conv2d(in_planes, out_planes, kernel_size = 1, stride = stride, bias = False),
@@ -19,19 +33,12 @@ class BasicBlock(nn.Module):
         else:
             self.match = lambda x: x
 
-        self.fc1 = nn.Conv2d(out_planes, out_planes // reduction, kernel_size = 1)
-        self.fc2 = nn.Conv2d(out_planes // reduction, out_planes, kernel_size = 1)
-
     def forward(self, x):
         residual = self.match(x)
         out = F.relu(self.bn1(self.conv1(x)))
         out = self.bn2(self.conv2(out))
 
-        w = self.avg_pool(out)
-        w = F.relu(self.fc1(w))
-        w = torch.sigmoid((self.fc2(w)))
-
-        out = out * w
+        out = self.se(out)
         out += residual
         out = F.relu(out)
         return out
@@ -78,8 +85,6 @@ def senet18():
 
 def senet34():
     return SENet(BasicBlock, [3, 4, 6, 3])
-
-
 
 
 def test():
