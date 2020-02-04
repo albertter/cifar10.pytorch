@@ -136,9 +136,8 @@ def resnext_32_4d():
 
 if __name__ == '__main__':
     model = resnext_32_4d()
-    model2=SKConv()
+    model2 = SKConv()
     x = torch.randn(1, 3, 32, 32)
     # y = model(x)
-    y=model2(x)
+    y = model2(x)
     print(y.shape)
-

@@ -16,41 +16,46 @@ from models import *
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 lr = 0.001
+writer = SummaryWriter('runs/demo')
+
+
+def save_checkpoint(path = './checkpoint/cifar_senet18.pth'):
+    torch.save(model.state_dict(), path)
+    print('saving model successful!')
+
+
 # data
-print('==> Preparing data..')
-transform_train = transforms.Compose([
-    transforms.RandomCrop(32, padding = 4),
-    transforms.RandomHorizontalFlip(),
-    transforms.ToTensor(),
-    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-])
+def data_preprocess():
+    print('==> Preparing data..')
+    transform_train = transforms.Compose([
+        transforms.RandomCrop(32, padding = 4),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+    ])
 
-transform_test = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-])
-trainset = torchvision.datasets.CIFAR10(root = './data', train = True, download = True, transform = transform_train)
-trainloader = torch.utils.data.DataLoader(trainset, batch_size = 128, shuffle = True, num_workers = 2)
+    transform_test = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+    ])
+    trainset = torchvision.datasets.CIFAR10(root = './data', train = True, download = True, transform = transform_train)
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size = 4, shuffle = True, num_workers = 1)
 
-testset = torchvision.datasets.CIFAR10(root = './data', train = False, download = True, transform = transform_test)
-testloader = torch.utils.data.DataLoader(testset, batch_size = 100, shuffle = False, num_workers = 2)
+    testset = torchvision.datasets.CIFAR10(root = './data', train = False, download = True, transform = transform_test)
+    testloader = torch.utils.data.DataLoader(testset, batch_size = 4, shuffle = False, num_workers = 1)
 
-classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
-
-model = senet34()
-model = model.to(device)
-
-criterion = nn.CrossEntropyLoss()
-optimizer = optim.SGD(model.parameters(), lr = lr, momentum = 0.9, weight_decay = 5e-4)
+    classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
+    print('data has prepared.')
+    return trainloader, testloader, classes
 
 
-def train(epoch):
-    print('\nEpoch: ', epoch + 1)
+def train(epoch, model, criterion, optimizer, trainloader):
+    # print('\nEpoch: ', epoch + 1)
     model.train()
     train_loss = 0.0
     correct = 0
     total = 0
-    for i, (inputs, labels) in enumerate(trainloader, 0):
+    for batch_idx, (inputs, labels) in enumerate(trainloader, 0):
         inputs, labels = inputs.to(device), labels.to(device)
         optimizer.zero_grad()
         outputs = model(inputs)
@@ -64,14 +69,26 @@ def train(epoch):
         total += labels.size(0)
         correct += predicted.eq(labels).sum().item()
 
-        # if i % 100 == 0:
-        print(i, len(trainloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
-                  % (train_loss / (i + 1), 100. * correct / total, correct, total))
+        if batch_idx % 10 == 0:
+            print('train child epoch : {} [{}/{}]| loss: {:.3f} | acc: {:.3f}'.format(epoch, batch_idx,
+                                                                                      len(trainloader),
+                                                                                      train_loss / (batch_idx + 1),
+                                                                                      100. * correct / total))
+            writer.add_scalar('training_loss', train_loss / (batch_idx + 1), epoch)
+            writer.add_scalar('accuracy', 100. * correct / total, epoch)
 
 
 if __name__ == '__main__':
+
+    trainloader, testloader, classes = data_preprocess()
+
+    model = senet34()
+    model = model.to(device)
+
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.SGD(model.parameters(), lr = lr, momentum = 0.9, weight_decay = 5e-4)
+
     for epoch in range(20):
-        train(epoch)
+        train(epoch, model, criterion, optimizer, trainloader)
     print('training finished.')
-    PATH = './checkpoint/cifar_senet18.pth'
-    torch.save(model.state_dict(), PATH)
+    save_checkpoint()

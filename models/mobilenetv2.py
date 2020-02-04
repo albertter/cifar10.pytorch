@@ -86,4 +86,4 @@ class MobileNetV2(nn.Module):
 x = torch.randn(1, 3, 32, 32)
 model = MobileNetV2()
 # model = BottleNeck(32, 64, 2, 6)
-print(model(x).shape)
+print(model)

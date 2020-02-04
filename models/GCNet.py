@@ -1,53 +1,13 @@
 import torch
 from torch import nn
 import torch.nn.functional as F
+from torch.utils.tensorboard import SummaryWriter
 
 
-class GCBasicBlock(nn.Module):
-    def __init__(self, in_planes, out_planes, stride = 1):
-        super(GCBasicBlock, self).__init__()
-        self.conv1 = nn.Conv2d(in_planes, out_planes, kernel_size = 3, stride = stride, padding = 1, bias = False)
-        self.bn1 = nn.BatchNorm2d(out_planes)
-        self.conv2 = nn.Conv2d(out_planes, out_planes, kernel_size = 3, stride = stride, padding = 1, bias = False)
-        self.bn2 = nn.BatchNorm2d(out_planes)
-        if in_planes != out_planes:
-            self.match = nn.Sequential(
-                nn.Conv2d(in_planes, out_planes, kernel_size = 1, stride = stride, bias = False),
-                nn.BatchNorm2d(out_planes)
-            )
-        else:
-            self.match = lambda x: x
-
-    def forward(self, x):
-        residual = self.match(x)
-        out = F.relu(self.bn1(self.conv1(x)))
-        out = self.bn2(self.conv2(out))
-
-        out += residual
-        out = F.relu(out)
-        return out
-
-
-class GCBottleneck(nn.Module):
-    expansion = 1
-
-    def __init__(self, in_planes, planes, ratio = 4, stride = 1):
-        super(GCBottleneck, self).__init__()
-        self.planes = planes
-        self.conv1 = nn.Conv2d(in_planes, planes, kernel_size = 1, bias = False)
-        self.bn1 = nn.BatchNorm2d(planes)
-        self.conv2 = nn.Conv2d(planes, planes, kernel_size = 3, stride = stride, padding = 1, bias = False)
-        self.bn2 = nn.BatchNorm2d(planes)
-        self.conv3 = nn.Conv2d(planes, self.expansion * planes, kernel_size = 1, bias = False)
-        self.bn3 = nn.BatchNorm2d(self.expansion * planes)
-
-        self.shortcut = nn.Sequential()
-        if stride != 1 or in_planes != self.expansion * planes:
-            self.shortcut = nn.Sequential(
-                nn.Conv2d(in_planes, self.expansion * planes, kernel_size = 1, stride = stride, bias = False),
-                nn.BatchNorm2d(self.expansion * planes)
-            )
-
+class GCBlock(nn.Module):
+    def __init__(self, channels, ratio = 4):
+        super(GCBlock, self).__init__()
+        self.planes = channels
         self.conv1x1 = nn.Conv2d(self.planes, 1, kernel_size = 1)
         self.softmax = nn.Softmax(dim = 2)
         self.fc1 = nn.Conv2d(self.planes, self.planes // ratio, kernel_size = 1)
@@ -70,20 +30,39 @@ class GCBottleneck(nn.Module):
         return context
 
     def forward(self, x):
+        w = self.spatial_pool(x)
+        w = self.fc1(w)
+        w = self.fc2(F.relu(self.LN(w)))
+        return x + w
+
+
+class GCBottleneck(nn.Module):
+    expansion = 1
+
+    def __init__(self, in_planes, planes, ratio = 4, stride = 1):
+        super(GCBottleneck, self).__init__()
+        self.planes = planes
+        self.conv1 = nn.Conv2d(in_planes, planes, kernel_size = 1, bias = False)
+        self.bn1 = nn.BatchNorm2d(planes)
+        self.conv2 = nn.Conv2d(planes, planes, kernel_size = 3, stride = stride, padding = 1, bias = False)
+        self.bn2 = nn.BatchNorm2d(planes)
+        self.conv3 = nn.Conv2d(planes, self.expansion * planes, kernel_size = 1, bias = False)
+        self.bn3 = nn.BatchNorm2d(self.expansion * planes)
+
+        self.shortcut = nn.Sequential()
+        if stride != 1 or in_planes != self.expansion * planes:
+            self.shortcut = nn.Sequential(
+                nn.Conv2d(in_planes, self.expansion * planes, kernel_size = 1, stride = stride, bias = False),
+                nn.BatchNorm2d(self.expansion * planes)
+            )
+        self.gc = GCBlock(self.expansion * planes)
+
+    def forward(self, x):
         out = F.relu(self.bn1(self.conv1(x)))
         out = F.relu(self.bn2(self.conv2(out)))
         out = self.bn3(self.conv3(out))
-        # print(out.shape)
-        w = self.spatial_pool(out)
-        # print(w.shape)
-        w = self.fc1(w)
-        # print(w.shape)
 
-        w = self.fc2(F.relu(self.LN(w)))
-        # print(w.shape)
-
-        out = out + w
-        # print(out.shape)
+        out = self.gc(out)
 
         out += self.shortcut(x)
         out = F.relu(out)
@@ -138,11 +117,18 @@ def gc_resnet_50():
 
 def test():
     model = gc_resnet_50()
+    # print(model)
+    # writer.add_graph(model, images)
+    # writer.close()
     x = torch.randn(1, 3, 32, 32)
     y = model(x)
-    print(y)
+    # print(y)
     print(y.size())
 
 
 if __name__ == '__main__':
+    # writer = SummaryWriter('runs/gcnet')
     test()
+    # x = torch.randn(1, 10, 256, 128)
+    # net = GCBlock(10)
+    # print(net(x).shape)

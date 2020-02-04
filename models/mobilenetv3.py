@@ -68,10 +68,10 @@ class Block(nn.Module):
 
 
 class MobileNetV3Large(nn.Module):
-    def __init__(self, num_classes):
+    def __init__(self, num_classes=10):
         super(MobileNetV3Large, self).__init__()
         self.conv1 = nn.Conv2d(3, 16, kernel_size = 3, stride = 2)
-        self.hs = hswish
+        self.hs1 = hswish
         self.setting = [
             # kernal_size,exp_size, out_planes, se,nl,stride
             [3, 16, 16, False, 'RE', 1],
@@ -91,17 +91,20 @@ class MobileNetV3Large(nn.Module):
             [5, 960, 160, True, 'HS', 1],
 
         ]
-        self.conv = nn.Conv2d(160, 960, kernel_size = 1, padding = 0)
-        self.hs = hswish
+        self.conv2 = nn.Conv2d(160, 960, kernel_size = 1, padding = 0)
+        self.hs2 = hswish
         self.maxpool = nn.MaxPool2d(kernel_size = 7)
-        self.conv = nn.Conv2d(960, 1280, kernel_size = 1, padding = 0)
-        self.conv = nn.Conv2d(1280, num_classes, kernel_size = 1, padding = 0)
+        self.conv3 = nn.Conv2d(960, 1280, kernel_size = 1, padding = 0)
+        self.conv3 = nn.Conv2d(1280, num_classes, kernel_size = 1, padding = 0)
 
     def forward(self, x):
-        return x
+        out = self.hs1(self.conv1(x))
+        return out
 
 
 x = torch.randn(1, 3, 32, 32)
 model = MobileNetV3Large()
+y=model(x)
 # model = BottleNeck(32, 64, 2, 6)
-print(model(x).shape)
+print(y.shape)
+

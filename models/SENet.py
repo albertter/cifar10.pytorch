@@ -89,6 +89,7 @@ def senet34():
 
 def test():
     model = senet34()
+    print(model)
     x = torch.randn(1, 3, 32, 32)
     y = model(x)
     print(y)

@@ -28,7 +28,7 @@ class BasicBlock(nn.Module):
 
 
 class DenseBlock(nn.Module):
-    def __init__(self, in_planes, growth_rate, bn_size, drop_rate):
+    def __init__(self, in_planes, growth_rate, bn_size, drop_rate=0):
         super(DenseBlock, self).__init__()
         self.conv1 = nn.Sequential(
             nn.BatchNorm2d(in_planes),
@@ -70,7 +70,7 @@ class DenseNet(nn.Module):
         self.conv1 = nn.Conv2d(3, 64, kernel_size = 3, stride = 1, padding = 1, bias = False)
         self.bn1 = nn.BatchNorm2d(64)
         self.denselayer1 = self._make_layer(DenseBlock, 64, num_blocks[0], stride = 1)
-        self.trasitionlayer1 = TransitionLayer()
+        self.trasitionlayer1 = TransitionLayer(64, 128)
         self.denselayer2 = self._make_layer(DenseBlock, 128, num_blocks[1], stride = 2)
         self.denselayer3 = self._make_layer(DenseBlock, 256, num_blocks[2], stride = 2)
         self.denselayer4 = self._make_layer(DenseBlock, 512, num_blocks[3], stride = 2)
