@@ -1,2 +1,2 @@
 from .SENet import *
-from .Resnet import *
+from .resnet_with_modules import *

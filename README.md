@@ -8,8 +8,10 @@
 - mobilenetv2
 - SKnet
 - GCnet
+- CABM
 ## TO DO
 - VGG
 - Inception
 - mobilenetv3
-- shufflenet
+- shufflenetv1/v2
+- EncNet

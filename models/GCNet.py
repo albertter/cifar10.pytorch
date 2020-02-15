@@ -1,7 +1,6 @@
 import torch
 from torch import nn
 import torch.nn.functional as F
-from torch.utils.tensorboard import SummaryWriter
 
 
 class GCBlock(nn.Module):
@@ -39,7 +38,7 @@ class GCBlock(nn.Module):
 class GCBottleneck(nn.Module):
     expansion = 1
 
-    def __init__(self, in_planes, planes, ratio = 4, stride = 1):
+    def __init__(self, in_planes, planes, stride = 1, ratio = 4):
         super(GCBottleneck, self).__init__()
         self.planes = planes
         self.conv1 = nn.Conv2d(in_planes, planes, kernel_size = 1, bias = False)
@@ -48,6 +47,7 @@ class GCBottleneck(nn.Module):
         self.bn2 = nn.BatchNorm2d(planes)
         self.conv3 = nn.Conv2d(planes, self.expansion * planes, kernel_size = 1, bias = False)
         self.bn3 = nn.BatchNorm2d(self.expansion * planes)
+        self.gc = GCBlock(self.expansion * planes, ratio)
 
         self.shortcut = nn.Sequential()
         if stride != 1 or in_planes != self.expansion * planes:
@@ -55,7 +55,6 @@ class GCBottleneck(nn.Module):
                 nn.Conv2d(in_planes, self.expansion * planes, kernel_size = 1, stride = stride, bias = False),
                 nn.BatchNorm2d(self.expansion * planes)
             )
-        self.gc = GCBlock(self.expansion * planes)
 
     def forward(self, x):
         out = F.relu(self.bn1(self.conv1(x)))
@@ -79,7 +78,6 @@ class GCNet(nn.Module):
         self.layer2 = self._make_layer(block, 128, num_blocks[1], stride = 2)
         self.layer3 = self._make_layer(block, 256, num_blocks[2], stride = 2)
         self.layer4 = self._make_layer(block, 512, num_blocks[3], stride = 2)
-        self.avgpool = nn.AdaptiveAvgPool2d(1)
         self.fc = nn.Linear(512, num_class)
 
     def _make_layer(self, block, planes, num_blocks, stride):
@@ -97,19 +95,11 @@ class GCNet(nn.Module):
         out = self.layer2(out)
         out = self.layer3(out)
         out = self.layer4(out)
-
-        out = self.avgpool(out)
+        out = F.max_pool2d(out, 4)
         out = out.view(out.size(0), -1)
         out = self.fc(out)
         return out
 
-
-# def senet18():
-#     return GCNet(GCBasicBlock, [2, 2, 2, 2])
-#
-#
-# def senet34():
-#     return GCNet(GCBasicBlock, [3, 4, 6, 3])
 
 def gc_resnet_50():
     return GCNet(GCBottleneck, [3, 4, 6, 3])
@@ -118,17 +108,10 @@ def gc_resnet_50():
 def test():
     model = gc_resnet_50()
     # print(model)
-    # writer.add_graph(model, images)
-    # writer.close()
     x = torch.randn(1, 3, 32, 32)
     y = model(x)
-    # print(y)
     print(y.size())
 
 
 if __name__ == '__main__':
-    # writer = SummaryWriter('runs/gcnet')
     test()
-    # x = torch.randn(1, 10, 256, 128)
-    # net = GCBlock(10)
-    # print(net(x).shape)
