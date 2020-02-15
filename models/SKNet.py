@@ -89,8 +89,6 @@ class Resnext(nn.Module):
     def __init__(self, block, num_blocks, num_classes = 10):
         super(Resnext, self).__init__()
         self.in_planes = 64
-        # self.cardinality = cardinality
-        # self.bottleneck_width = bottleneck_width
 
         self.conv1 = nn.Conv2d(3, 64, kernel_size = 3, stride = 1, padding = 1, bias = False)
         self.bn1 = nn.BatchNorm2d(64)
@@ -103,26 +101,18 @@ class Resnext(nn.Module):
             nn.Linear(1024 * block.expansion, num_classes),
             nn.Softmax(dim = 1)
         )
-        # self.fc = nn.Linear(1024 * block.expansion, num_classes)
-        # self.softmax = nn.Softmax(-1)
 
     def _make_layer(self, block, planes, num_blocks, stride):
         strides = [stride] + [1] * (num_blocks - 1)
         layers = []
         for stride in strides:
-            # print(self.in_planes, stride)
-            # print('cardinality={}, bottleneck_width={}, expansion={}'.format(self.cardinality, self.bottleneck_width,
-            #                                                                  block.expansion))
             layers.append(block(self.in_planes, planes, stride))
             self.in_planes = planes * block.expansion
-        # self.bottleneck_width *= 2
         return nn.Sequential(*layers)
 
     def forward(self, x):
         out = F.relu(self.bn1(self.conv1(x)))
-        print(out.shape)
         out = self.layer1(out)
-        print(out.shape)
         out = self.layer2(out)
         out = self.layer3(out)
         out = self.layer4(out)
@@ -139,9 +129,6 @@ def resnext_32_4d():
 
 if __name__ == '__main__':
     model = resnext_32_4d()
-    # model2 = SKunit(64, 64)
-    # print(model2)
-    x = torch.randn(100, 3, 32, 32)
+    x = torch.randn(1, 3, 32, 32)
     y = model(x)
-    # y = model2(x)
     print(y.shape)

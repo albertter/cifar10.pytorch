@@ -133,7 +133,7 @@ class Resnet(nn.Module):
         out = self.layer4(out)
 
         out = F.avg_pool2d(out, 4)
-        out = out.view(out.size(0), -1)
+        out = torch.flatten(out, 1)
         out = self.fc(out)
         return out
 
@@ -159,7 +159,7 @@ def resnet152(add_module):
 
 
 def test():
-    model = resnet34('gc')
+    model = resnet101('gc')
     x = torch.randn(1, 3, 32, 32)
     y = model(x)
     print(y)
