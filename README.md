@@ -1,4 +1,5 @@
 # cifar10.pytorch
+- VGG
 - resnet
 - se_resnet
 - densenet
@@ -10,8 +11,6 @@
 - GCnet
 - CABM
 ## TO DO
-- VGG
 - Inception
-- mobilenetv3
 - shufflenetv1/v2
 - EncNet
