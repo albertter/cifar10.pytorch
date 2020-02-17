@@ -1,6 +1,7 @@
 from .CBAM import *
 from .SENet import *
 from .GCNet import *
+from .BAM import *
 
 
 class BasicBlock(nn.Module):
@@ -103,9 +104,16 @@ class Bottleneck(nn.Module):
 
 
 class Resnet(nn.Module):
-    def __init__(self, block, num_blocks, num_classes = 10, add_module = None):
+    def __init__(self, block, num_blocks, num_classes = 10, add_module = None, use_bam = False):
         super(Resnet, self).__init__()
         assert add_module in ['se', 'cbam', 'gc', None]
+
+        if use_bam:
+            self.bam1 = BAM(64 * block.expansion)
+            self.bam2 = BAM(128 * block.expansion)
+            self.bam3 = BAM(256 * block.expansion)
+        else:
+            self.bam1, self.bam2, self.bam3 = None, None, None
 
         self.in_planes = 64
         self.conv1 = nn.Conv2d(3, 64, kernel_size = 3, stride = 1, padding = 1, bias = False)
@@ -128,8 +136,14 @@ class Resnet(nn.Module):
         out = F.relu(self.bn1(self.conv1(x)))
 
         out = self.layer1(out)
+        if self.bam1 is not None:
+            out = self.bam1(out)
         out = self.layer2(out)
+        if self.bam2 is not None:
+            out = self.bam2(out)
         out = self.layer3(out)
+        if self.bam3 is not None:
+            out = self.bam3(out)
         out = self.layer4(out)
 
         out = F.avg_pool2d(out, 4)
@@ -151,7 +165,7 @@ def resnet50(add_module):
 
 
 def resnet101(add_module):
-    return Resnet(Bottleneck, [3, 4, 23, 3], add_module = add_module)
+    return Resnet(Bottleneck, [3, 4, 23, 3], add_module = add_module, use_bam = True)
 
 
 def resnet152(add_module):
@@ -160,7 +174,7 @@ def resnet152(add_module):
 
 def test():
     model = resnet101('gc')
-    x = torch.randn(1, 3, 32, 32)
+    x = torch.randn(2, 3, 32, 32)
     y = model(x)
     print(y)
     print(y.size())
