@@ -68,7 +68,6 @@ def train(epoch, model, criterion, optimizer, trainloader):
         _, predicted = outputs.max(1)
         total += labels.size(0)
         correct += predicted.eq(labels).sum().item()
-
         if batch_idx % 10 == 0:
             print('train child epoch : {} [{}/{}]| loss: {:.3f} | acc: {:.3f}'.format(epoch, batch_idx,
                                                                                       len(trainloader),
@@ -82,7 +81,7 @@ if __name__ == '__main__':
 
     trainloader, testloader, classes = data_preprocess()
 
-    model = senet34()
+    model = resnet101(add_module = 'gc')
     model = model.to(device)
 
     criterion = nn.CrossEntropyLoss()
