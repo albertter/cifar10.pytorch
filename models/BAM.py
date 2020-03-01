@@ -56,8 +56,9 @@ class BAM(nn.Module):
         return att * x
 
 
-model = BAM(32)
-print(model)
-x = torch.randn(2, 32, 32, 32)
-y = model(x)
-print(y.size())
+if __name__ == '__main__':
+    model = BAM(32)
+    print(model)
+    x = torch.randn(2, 32, 32, 32)
+    y = model(x)
+    print(y.size())

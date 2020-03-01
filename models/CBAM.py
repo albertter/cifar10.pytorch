@@ -49,8 +49,8 @@ class CBAM(nn.Module):
         return x_out
 
 
-model = CBAM(32)
-print(model)
-x = torch.randn(1, 32, 32, 32)
-y = model(x)
-print(y.size())
+# model = CBAM(32)
+# print(model)
+# x = torch.randn(1, 32, 32, 32)
+# y = model(x)
+# print(y.size())

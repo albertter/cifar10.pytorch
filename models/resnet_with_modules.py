@@ -2,6 +2,7 @@ from .CBAM import *
 from .SENet import *
 from .GCNet import *
 from .BAM import *
+from torchsummary import summary
 
 
 class BasicBlock(nn.Module):
@@ -173,11 +174,9 @@ def resnet152(add_module):
 
 
 def test():
-    model = resnet101('gc')
-    x = torch.randn(2, 3, 32, 32)
-    y = model(x)
-    print(y)
-    print(y.size())
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = resnet34(None).to(device)
+    summary(model, (3, 32, 32))
 
 
 if __name__ == '__main__':
